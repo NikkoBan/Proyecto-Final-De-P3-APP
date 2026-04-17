@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Base de datos
+*.db
+
+# Entorno
+.env
+
+# Visual Studio
+.vs/
+
+# Otros
+*.log
