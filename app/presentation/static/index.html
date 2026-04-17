@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="TaskFlow — a modern task manager with JWT authentication and full CRUD." />
+  <title>TaskFlow — Task Manager</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<div id="toast-container" aria-live="polite"></div>
+
+<section id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon">✦</div>
+      <h1>TaskFlow</h1>
+      <p>Your smart task management hub</p>
+    </div>
+
+    <div class="auth-tabs" role="tablist">
+      <button id="tab-login"    class="tab-btn active" role="tab" aria-selected="true"  onclick="switchTab('login')">Sign In</button>
+      <button id="tab-register" class="tab-btn"         role="tab" aria-selected="false" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <form id="login-form" novalidate>
+      <div class="form-group">
+        <label for="login-email">Email address</label>
+        <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        <div class="field-error" id="login-email-err">Please enter a valid email.</div>
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+        <div class="field-error" id="login-password-err">Password is required.</div>
+      </div>
+      <button id="login-btn" type="submit" class="btn btn-primary">
+        <span id="login-btn-text">Sign In</span>
+      </button>
+    </form>
+
+    <form id="register-form" novalidate style="display:none">
+      <div class="form-group">
+        <label for="reg-email">Email address</label>
+        <input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        <div class="field-error" id="reg-email-err">Please enter a valid email.</div>
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Password</label>
+        <input id="reg-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password" required />
+        <div class="field-error" id="reg-password-err">Password must be at least 8 characters.</div>
+      </div>
+      <div class="form-group">
+        <label for="reg-confirm">Confirm password</label>
+        <input id="reg-confirm" type="password" placeholder="Repeat password" autocomplete="new-password" required />
+        <div class="field-error" id="reg-confirm-err">Passwords do not match.</div>
+      </div>
+      <button id="register-btn" type="submit" class="btn btn-primary">
+        <span id="register-btn-text">Create Account</span>
+      </button>
+    </form>
+  </div>
+</section>
+
+<div id="app-screen">
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">✦</div>
+      TaskFlow
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">
+        <div class="nav-avatar" id="user-avatar">?</div>
+        <span id="user-email-display"></span>
+      </div>
+      <button class="btn-logout" id="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <span class="stat-icon">📋</span>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Total Tasks</div>
+      </div>
+      <div class="stat-card pending">
+        <span class="stat-icon">⏳</span>
+        <div class="stat-value" id="stat-pending">—</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card progress">
+        <span class="stat-icon">⚡</span>
+        <div class="stat-value" id="stat-progress">—</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+      <div class="stat-card done">
+        <span class="stat-icon">✅</span>
+        <div class="stat-value" id="stat-done">—</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Task Board</h2>
+      <button class="btn btn-success btn-sm" id="new-task-btn" onclick="openCreateModal()">
+        + New Task
+      </button>
+    </div>
+
+    <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter tasks by status">
+      <button class="filter-pill active" data-status="" onclick="setFilter(this, '')">All</button>
+      <button class="filter-pill" data-status="pending"     onclick="setFilter(this,'pending')">Pending</button>
+      <button class="filter-pill" data-status="in_progress" onclick="setFilter(this,'in_progress')">In Progress</button>
+      <button class="filter-pill" data-status="done"        onclick="setFilter(this,'done')">Done</button>
+    </div>
+
+    <div class="table-wrapper" style="margin-top:16px">
+      <table id="tasks-table" aria-label="Task list">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Created</th>
+            <th style="width:140px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tasks-tbody"></tbody>
+      </table>
+      <div id="tasks-empty" class="empty-state" style="display:none">
+        <span class="empty-icon">🗂️</span>
+        <p>No tasks yet. Create your first one!</p>
+      </div>
+      <div class="pagination" id="pagination-bar">
+        <span id="pagination-info">Showing 0 tasks</span>
+        <div class="pagination-btns">
+          <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+          <button class="page-btn" id="next-btn" onclick="changePage(1)"  disabled>Next →</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="modal-backdrop" id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">New Task</h3>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close modal">✕</button>
+    </div>
+    <form id="task-form" novalidate>
+      <div class="form-group">
+        <label for="task-title">Title <span style="color:var(--danger)">*</span></label>
+        <input id="task-title" type="text" placeholder="Task title (3–100 chars)" maxlength="100" required />
+        <div class="field-error" id="task-title-err">Title must be 3–100 characters.</div>
+      </div>
+      <div class="form-group">
+        <label for="task-desc">Description</label>
+        <textarea id="task-desc" rows="3" placeholder="Optional description…"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label for="task-status">Status</label>
+          <select id="task-status">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="task-priority">Priority</label>
+          <select id="task-priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modal-submit-btn" style="width:auto">
+          <span id="modal-submit-text">Create Task</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
